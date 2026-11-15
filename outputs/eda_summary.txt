@@ -1,0 +1,239 @@
+
+====================================================================================================
+A. DATASET OVERVIEW (train_test.csv)
+====================================================================================================
+shape: 48,000 rows x 14 original columns
+memory: 9.4 MB
+
+dtypes / nunique / nulls / null%:
+                       dtype  nunique  nulls  null_pct
+load_id                  str    48000      0      0.00
+pickup                   str       64      0      0.00
+delivery                 str       64      0      0.00
+pickup_lat           float64       64      0      0.00
+pickup_lon           float64       63      0      0.00
+delivery_lat         float64       64      0      0.00
+delivery_lon         float64       63      0      0.00
+distance             float64    21204      0      0.00
+equipment                str        3      0      0.00
+weight               float64    23678    300      0.62
+date          datetime64[us]      304      0      0.00
+market_index         float64    32884    374      0.78
+quote_signal         float64    37633      0      0.00
+posted_rate          float64    45398      0      0.00
+rpm                  float64    47988      0      0.00
+lane                     str     4014      0      0.00
+month              period[M]       10      0      0.00
+dow                    int32        7      0      0.00
+
+constant / near-constant columns: none
+
+====================================================================================================
+B. DATA QUALITY
+====================================================================================================
+duplicate load_id: 0
+exact duplicate rows (excluding load_id): 0
+duplicate feature rows (pickup,delivery,distance,equipment,weight,date): 0
+load_id sequential & monotone with date: True / True
+same pickup and delivery city: 0
+distance <= 0: 0 | posted_rate <= 0: 0
+quote_signal <= 0: 0 | market_index <= 0: 0
+
+-- weight anomalies --
+negative: 292 | zero: 0 | missing: 300
+abs(weight)==47500: 1204 (2.51%) | weight==+47500: 1191 | weight==-47500: 13
+abs(weight) < 5000: 0 | min positive: 5000.0 | max: 47500.0
+abs(negative weight) quantiles: [18966.0, 25928.0, 31822.0, 37284.0, 46070.0]
+positive weight quantiles:        [18004.0, 25922.0, 31494.0, 37063.0, 44962.0]
+KS test abs(neg) vs pos weight: stat=0.0410 p=0.6973  (high p => sign flip of same distribution)
+median rpm | weight negative / positive / missing: 2.157 2.145 2.118
+negative weight share by equipment: {'Dry Van': 0.531, 'Flatbed': 0.24, 'Reefer': 0.229}
+overall equipment share:             {'Dry Van': 0.567, 'Reefer': 0.251, 'Flatbed': 0.182}
+negative weight by month: {Period('2025-01', 'M'): 31, Period('2025-02', 'M'): 30, Period('2025-03', 'M'): 40, Period('2025-04', 'M'): 25, Period('2025-05', 'M'): 40, Period('2025-06', 'M'): 30, Period('2025-07', 'M'): 22, Period('2025-08', 'M'): 15, Period('2025-09', 'M'): 26, Period('2025-10', 'M'): 33}
+
+-- market_index missingness --
+missing by month: {Period('2025-01', 'M'): 36, Period('2025-02', 'M'): 36, Period('2025-03', 'M'): 44, Period('2025-04', 'M'): 31, Period('2025-05', 'M'): 43, Period('2025-06', 'M'): 42, Period('2025-07', 'M'): 36, Period('2025-08', 'M'): 33, Period('2025-09', 'M'): 31, Period('2025-10', 'M'): 42}
+days with ALL market_index missing: 0 of 304
+median rpm | market_index missing / present: 2.121 2.145
+market_index within-day std: mean=0.0249, max=0.0295; across-day std of daily mean=0.1665
+=> market_index is effectively a daily market-level series; missing values can be filled from the daily mean.
+day-to-day abs change in daily mean market_index: median 0.0611 max 0.2208
+
+-- coordinates vs distance --
+distance / haversine ratio quantiles: {0.01: 1.13, 0.1: 1.151, 0.25: 1.165, 0.5: 1.182, 0.75: 1.205, 0.9: 1.238, 0.99: 1.404}
+corr(distance, haversine): 0.9995
+city -> coordinate mapping is one-to-one: True (64 cities)
+cities sharing a longitude:
+       city      lat   lon
+Providence 37.37287 -69.5
+    Boston 39.27463 -69.5
+sample city coordinates (sanity check vs real geography):
+                   lat        lon
+city                             
+Philadelphia  39.22317  -72.96710
+Richmond      38.09122  -76.78906
+Los Angeles   28.56624 -116.70249
+Atlanta       34.84933  -86.28940
+Lexington     36.99152  -84.99876
+Fort Wayne    41.31561  -85.36206
+per-lane distance spread % (max-min)/median quantiles: {0.5: 5.6, 0.9: 9.4, 0.99: 21.7, 1.0: 46.4}
+
+====================================================================================================
+C. NUMERICAL STATISTICS
+====================================================================================================
+                count       mean       std        min        1%         5%        25%        50%        75%        95%        99%        max   skew  kurtosis
+distance      48000.0   1135.857   728.564     70.000   121.899    236.100    550.400    953.300   1645.525   2562.300   3029.304   3439.800  0.766    -0.260
+weight        47700.0  31028.844  9391.441 -47500.000  9801.960  17490.950  25800.000  31436.500  37018.000  44934.200  47500.000  47500.000 -1.910    11.873
+market_index  47626.0      1.083     0.168      0.676     0.783      0.836      0.950      1.056      1.220      1.366      1.407      1.468  0.214    -1.011
+quote_signal  48000.0      2.062     0.291      0.692     1.305      1.606      1.891      2.056      2.222      2.551      2.884      3.610  0.172     1.669
+posted_rate   48000.0   2373.981  1486.493     57.220   327.169    599.738   1251.555   2030.760   3330.750   4953.766   5972.834  25533.000  1.902    13.283
+rpm           48000.0      2.215     0.584      0.334     1.674      1.808      1.987      2.145      2.343      2.736      3.177     14.125  8.720   113.689
+
+====================================================================================================
+C2. CATEGORICAL STATISTICS
+====================================================================================================
+
+pickup: 64 levels | top5 {'Oklahoma City': 1242, 'Lexington': 1209, 'Bakersfield': 1193, 'Fort Wayne': 1170, 'Hartford': 1150} | bottom5 {'Detroit': 337, 'Washington': 337, 'St. Louis': 318, 'Las Vegas': 277, 'Dallas': 276}
+
+delivery: 64 levels | top5 {'Lexington': 1197, 'Fort Wayne': 1176, 'Baton Rouge': 1167, 'Bakersfield': 1156, 'Hartford': 1143} | bottom5 {'St. Louis': 344, 'Birmingham': 318, 'Detroit': 307, 'Dallas': 306, 'Las Vegas': 292}
+
+equipment: 3 levels | top5 {'Dry Van': 27202, 'Reefer': 12045, 'Flatbed': 8753} | bottom5 {'Dry Van': 27202, 'Reefer': 12045, 'Flatbed': 8753}
+
+lanes: 4014 distinct of 4032 possible directed pairs; median loads/lane=10, min=1, max=39; lanes with <5 loads: 537
+share of loads in lanes with <10 training loads: 0.2114
+lane x equipment combos: 10793 | combos with <5 loads: 6870
+
+====================================================================================================
+D. TARGET ANALYSIS: posted_rate
+====================================================================================================
+mean=2374.0 median=2030.8 std=1486.5 skew=1.902 log-skew=-0.491
+top 15 posted_rate rows:
+  load_id                       lane equipment  distance  weight       date  market_index  quote_signal  posted_rate       rpm
+TR-012185    Bakersfield -> Hartford   Dry Van    2829.8 33153.0 2025-03-19       1.16556       1.83188     25533.00  9.022899
+TR-037765        Phoenix -> Syracuse   Dry Van    2810.9 33674.0 2025-08-27       1.04877       2.16284     24294.98  8.643132
+TR-001467    Los Angeles -> Syracuse    Reefer    2786.0 30322.0 2025-01-10       0.98678       1.85370     24140.21  8.664828
+TR-017372       Reno -> Philadelphia    Reefer    2777.6 33158.0 2025-04-20       1.15070       2.15601     23662.71  8.519121
+TR-026236      Charleston -> Phoenix   Dry Van    2552.5 25665.0 2025-06-15       1.20224       1.81289     23580.42  9.238167
+TR-028220          Tucson -> Raleigh   Dry Van    2423.3 30972.0 2025-06-27       1.32894       1.97112     22755.66  9.390360
+TR-003354      Phoenix -> Charleston    Reefer    2527.9 36840.0 2025-01-22       1.03241       2.07342     22534.65  8.914376
+TR-040172       Montgomery -> Fresno   Dry Van    2283.4 32447.0 2025-09-11       0.98502       1.93645     20361.89  8.917356
+TR-040097 Baltimore -> Oklahoma City    Reefer    1760.3 29521.0 2025-09-11       1.00464       2.28753     20132.37 11.436897
+TR-047299      Boston -> Bakersfield    Reefer    2979.1 30585.0 2025-10-27       0.86501       2.09472     19110.30  6.414790
+TR-031260 Oklahoma City -> Baltimore    Reefer    1747.7 28876.0 2025-07-16       1.34103       1.80406     19042.39 10.895686
+TR-034584          Atlanta -> Fresno   Dry Van    2242.0 32005.0 2025-08-06       1.09714       1.98678     18972.15  8.462154
+TR-046214         Columbia -> Tucson   Flatbed    2023.4 34710.0 2025-10-20       0.89822       2.06797     17893.17  8.843120
+TR-020246     Atlanta -> Los Angeles    Reefer    2153.5 31758.0 2025-05-08       1.42571       1.96054     17772.53  8.252858
+TR-035469        Lexington -> Fresno   Dry Van    2305.9 42707.0 2025-08-12       0.94850       2.28957     17742.34  7.694323
+
+rpm extremes: rpm>4: 340 | rpm>6: 270 | rpm<1: 329 | rpm<1.2: 335
+bottom 10 rpm rows:
+  load_id                       lane equipment  distance   weight       date  quote_signal  posted_rate      rpm
+TR-014103     Buffalo -> Bakersfield   Dry Van    2536.4  27044.0 2025-03-30       1.77264       846.42 0.333709
+TR-025799             Albany -> Reno   Dry Van    2894.3  32383.0 2025-06-12       1.87999       969.83 0.335083
+TR-023044    Phoenix -> Philadelphia   Dry Van    2983.4  37692.0 2025-05-26       2.31695      1047.91 0.351247
+TR-046174    Philadelphia -> El Paso   Dry Van    2490.9  22411.0 2025-10-20       2.40555       880.13 0.353338
+TR-000509  Las Vegas -> Grand Rapids   Flatbed    1976.4  28233.0 2025-01-04       1.82202       699.41 0.353881
+TR-002512     Buffalo -> San Antonio   Flatbed    1644.3  22022.0 2025-01-16       1.87307       596.04 0.362489
+TR-040601      Fort Wayne -> Phoenix   Dry Van    2210.6  24954.0 2025-09-14       1.72726       808.74 0.365846
+TR-022459   Salt Lake City -> Mobile   Dry Van    1632.3 -32048.0 2025-05-22       2.10748       599.77 0.367439
+TR-022465 Kansas City -> Los Angeles   Dry Van    1909.1  32899.0 2025-05-22       2.09782       709.46 0.371620
+TR-001556        El Paso -> New York   Dry Van    2415.0  39284.0 2025-01-10       1.83237       911.44 0.377408
+
+rpm / quote_signal ratio quantiles: {0.001: 0.207, 0.01: 0.732, 0.05: 0.847, 0.25: 0.99, 0.5: 1.004, 0.75: 1.091, 0.95: 1.613, 0.99: 2.546, 0.999: 4.975}
+among rpm>4 rows, rpm/quote_signal ratio median: 3.615 | quote_signal median: 2.03 (overall 2.056 )
+=> if ratio is ~2x while quote_signal is normal, extreme rates are NOT reflected in the quote and look like label noise / special loads.
+
+median rpm by equipment: {'Dry Van': 2.046, 'Flatbed': 2.22, 'Reefer': 2.312}
+median rpm by distance band:
+              median   mean  count
+dist_band                         
+(0, 250]       2.745  2.815   2713
+(250, 500]     2.423  2.475   7577
+(500, 750]     2.242  2.280   7652
+(750, 1000]    2.148  2.191   7403
+(1000, 1500]   2.075  2.126   9008
+(1500, 2000]   2.001  2.044   6100
+(2000, 2500]   1.934  1.963   4862
+(2500, 4000]   1.869  1.903   2685
+median rpm by |weight| band:
+                median  count
+wt_band                      
+(0, 15000]       2.056   1032
+(15000, 25000]   2.072   9215
+(25000, 35000]   2.137  21437
+(35000, 45000]   2.203  13652
+(45000, 50000]   2.214   2364
+
+====================================================================================================
+E. FEATURE RELATIONSHIPS
+====================================================================================================
+Pearson:
+               distance  weight  market_index  quote_signal  posted_rate    rpm
+distance         1.000   0.002        -0.002        -0.057        0.909 -0.335
+weight           0.002   1.000         0.003         0.006        0.041  0.093
+market_index    -0.002   0.003         1.000        -0.068        0.034  0.083
+quote_signal    -0.057   0.006        -0.068         1.000       -0.040  0.049
+posted_rate      0.909   0.041         0.034        -0.040        1.000  0.003
+rpm             -0.335   0.093         0.083         0.049        0.003  1.000
+
+Spearman:
+               distance  weight  market_index  quote_signal  posted_rate    rpm
+distance         1.000   0.003        -0.001        -0.053        0.976 -0.736
+weight           0.003   1.000         0.002         0.005        0.042  0.199
+market_index    -0.001   0.002         1.000        -0.051        0.032  0.180
+quote_signal    -0.053   0.005        -0.051         1.000       -0.040  0.091
+posted_rate      0.976   0.042         0.032        -0.040        1.000 -0.620
+rpm             -0.736   0.199         0.180         0.091       -0.620  1.000
+
+Pearson rpm~quote_signal on trimmed 1.2<rpm<4 (47,325 rows): 0.1020
+Pearson rpm~market_index on trimmed: 0.1772
+
+naive prediction distance*quote_signal: MAE=232.3, median AE=55.5, R2=0.7941, MAPE=11.37%
+naive residual quantiles: {0.01: -1456.8, 0.05: -645.4, 0.25: -21.3, 0.5: 6.4, 0.75: 143.4, 0.95: 510.9, 0.99: 850.4}
+residual% by equipment: {'Dry Van': 0.0002, 'Flatbed': 0.0073, 'Reefer': 0.0117}
+residual% by month: {Period('2025-01', 'M'): 0.0001, Period('2025-02', 'M'): 0.0001, Period('2025-03', 'M'): -0.0001, Period('2025-04', 'M'): 0.0711, Period('2025-05', 'M'): 0.1175, Period('2025-06', 'M'): 0.0004, Period('2025-07', 'M'): 0.115, Period('2025-08', 'M'): 0.0404, Period('2025-09', 'M'): 0.0002, Period('2025-10', 'M'): 0.0923}
+residual% by dow: {0: 0.0027, 1: 0.0038, 2: 0.0055, 3: 0.0052, 4: 0.0049, 5: 0.0031, 6: 0.0029}
+corr(residual%, market_index): 0.1242
+corr(residual%, |weight|): 0.084
+corr(residual%, distance): -0.292
+lane-level residual% median spread (std across lanes with >=20 loads): 0.1102
+
+====================================================================================================
+F. TEMPORAL PATTERNS
+====================================================================================================
+         loads  rpm_med  rate_med     mi     qs  dist_med
+month                                                    
+2025-01   4918    2.029  1915.200  0.927  2.068    950.85
+2025-02   4337    2.061  1994.250  0.996  2.097    966.30
+2025-03   5036    2.139  2022.920  1.073  2.180    954.60
+2025-04   4819    2.147  2044.240  1.208  1.963    956.60
+2025-05   4913    2.190  2065.510  1.301  1.913    953.00
+2025-06   4783    2.248  2120.220  1.280  2.296    950.70
+2025-07   4912    2.187  2059.145  1.201  1.923    955.70
+2025-08   4759    2.121  2015.730  0.981  2.052    957.10
+2025-09   4670    2.160  2057.130  0.893  2.200    954.40
+2025-10   4853    2.164  2035.900  0.958  1.943    937.30
+
+day-of-week (0=Mon): loads, median rpm
+dow             0         1         2         3         4         5         6
+loads    6769.000  6737.000  7007.000  6934.000  6975.000  6770.000  6808.000
+rpm_med     2.126     2.139     2.163     2.171     2.157     2.132     2.127
+
+loads per day: mean 157.9 min 115 max 198
+
+holiday days: loads / median rpm / daily-mean rpm vs +-7day window:
+  New Year   2025-01-01: loads=145 rpm_med=2.016 window_rpm_med=2.029
+  MLK        2025-01-20: loads=151 rpm_med=2.025 window_rpm_med=2.027
+  Presidents 2025-02-17: loads=155 rpm_med=2.055 window_rpm_med=2.070
+  Memorial   2025-05-26: loads=173 rpm_med=2.207 window_rpm_med=2.196
+  July4      2025-07-04: loads=160 rpm_med=2.189 window_rpm_med=2.234
+  Labor      2025-09-01: loads=157 rpm_med=2.108 window_rpm_med=2.131
+  Columbus   2025-10-13: loads=158 rpm_med=2.102 window_rpm_med=2.164
+
+daily-level corr: rpm~market_index 0.642 | rpm~quote_signal 0.104 | rpm~day index 0.482
+daily rpm ~ a + b*day + c*market_index: b=0.0138 $/mile per 30 days, c=0.3050 $/mile per unit market_index
+
+====================================================================================================
+G. FIGURES -> reports/figures/
+====================================================================================================
+written: ['01_target_distribution.png', '02_numeric_distributions.png', '03_target_vs_distance_quote.png', '04_correlation_heatmap.png', '05_boxplots.png', '06_temporal.png', '07_dow_and_cities.png', '08_city_map.png']

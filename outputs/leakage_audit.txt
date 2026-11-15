@@ -1,0 +1,135 @@
+
+====================================================================================================
+1. quote_signal: how often does it equal the realised rate per mile?
+====================================================================================================
+  |rpm/quote - 1| < 0.001:   3.9% of rows
+  |rpm/quote - 1| < 0.005:  19.3% of rows
+  |rpm/quote - 1| < 0.01 :  34.6% of rows
+  |rpm/quote - 1| < 0.02 :  49.9% of rows
+  |rpm/quote - 1| < 0.05 :  58.0% of rows
+  |rpm/quote - 1| < 0.1  :  66.9% of rows
+
+match rate by month:
+month
+2025-01    0.642
+2025-02    0.650
+2025-03    0.664
+2025-04    0.036
+2025-05    0.036
+2025-06    0.683
+2025-07    0.031
+2025-08    0.053
+2025-09    0.667
+2025-10    0.032
+Freq: M
+
+match rate by equipment: {'Dry Van': 0.337, 'Flatbed': 0.351, 'Reefer': 0.362}
+match rate by day of week: {0: 0.376, 1: 0.345, 2: 0.333, 3: 0.334, 4: 0.336, 5: 0.344, 6: 0.356}
+match rate by distance band: {Interval(0, 250, closed='right'): 0.385, Interval(250, 500, closed='right'): 0.353, Interval(500, 1000, closed='right'): 0.352, Interval(1000, 1500, closed='right'): 0.348, Interval(1500, 2500, closed='right'): 0.323, Interval(2500, 4000, closed='right'): 0.336}
+match rate when weight negative / missing / market_index missing: 0.349 0.37 0.321
+
+daily match fraction quantiles: {0.0: 0.006, 0.1: 0.024, 0.25: 0.036, 0.5: 0.079, 0.75: 0.664, 0.9: 0.691, 1.0: 0.776}
+days with match fraction > 0.8: 0 | < 0.2: 154 | in between: 150
+
+contiguous regimes (match>0.5 vs not):
+     start        end  days  match
+2025-01-01 2025-03-31    90  0.652
+2025-04-01 2025-05-31    61  0.036
+2025-06-01 2025-06-30    30  0.684
+2025-07-01 2025-08-31    62  0.042
+2025-09-01 2025-09-30    30  0.667
+2025-10-01 2025-10-31    31  0.031
+
+====================================================================================================
+2. In the NON-matching regime, what is quote_signal?
+====================================================================================================
+non-match rows: 31,394 | match rows: 16,606
+non-match ratio rpm/quote quantiles: {0.01: 0.493, 0.05: 0.815, 0.25: 0.976, 0.5: 1.02, 0.75: 1.22, 0.95: 1.817, 0.99: 3.097}
+non-match: Pearson rpm~quote -0.139 | Spearman -0.3785
+match:     Pearson rpm~quote 0.9991
+non-match: corr(quote, lane median rpm): -0.3581
+non-match: corr(quote, distance): 0.2829 | corr(rpm, distance): -0.2882
+non-match: corr(quote, market_index): -0.1238
+non-match: quote_signal quantiles: {0.01: 1.239, 0.25: 1.842, 0.5: 2.009, 0.75: 2.172, 0.99: 2.66}
+match:     quote_signal quantiles: {0.01: 1.71, 0.25: 1.991, 0.5: 2.135, 0.75: 2.34, 0.99: 3.039}
+non-match: rpm quantiles: {0.01: 0.923, 0.25: 1.986, 0.5: 2.15, 0.75: 2.344, 0.99: 5.056}
+match:     rpm quantiles: {0.01: 1.71, 0.25: 1.99, 0.5: 2.135, 0.75: 2.341, 0.99: 3.033}
+  stale-quote test lag=  0d: rows=31394 corr(quote, same-lane rpm 0d earlier)=-0.1417
+  stale-quote test lag=  7d: rows= 1487 corr(quote, same-lane rpm 7d earlier)=-0.1526
+  stale-quote test lag= 14d: rows= 1444 corr(quote, same-lane rpm 14d earlier)=-0.1718
+  stale-quote test lag= 30d: rows= 1418 corr(quote, same-lane rpm 30d earlier)=-0.2064
+  stale-quote test lag= 60d: rows= 1330 corr(quote, same-lane rpm 60d earlier)=-0.1607
+  stale-quote test lag= 90d: rows= 1330 corr(quote, same-lane rpm 90d earlier)=-0.2004
+non-match: corr(ratio, market_index): 0.1138 | corr(ratio, distance): -0.3735
+
+====================================================================================================
+3. Does validation (Nov-Dec) look like the matching or non-matching regime?
+====================================================================================================
+train daily quote_signal mean/sd in matching days (match>0.5): {'qs': 2.169, 'qs_sd': 0.266}
+train daily quote_signal mean/sd in non-matching days:         {'qs': 1.959, 'qs_sd': 0.255}
+validation daily quote_signal mean/sd (Nov): {'qs': 2.055, 'qs_sd': 0.22}
+validation daily quote_signal mean/sd (Dec): {'qs': 2.048, 'qs_sd': 0.219}
+corr(quote, distance) | train match regime: -0.6719 | train non-match: 0.2829 | validation: 0.0114
+corr(quote, equipment is Reefer) | train match: 0.3572 | non-match: -0.1389 | validation: -0.0002
+  validation month 11: corr(quote, distance)=0.0174, corr(quote, Reefer)=-0.0004, corr(quote, |weight|)=0.0208
+  validation month 12: corr(quote, distance)=0.0055, corr(quote, Reefer)=-0.0002, corr(quote, |weight|)=0.0137
+  train match regime corr(quote, |weight|): 0.1685 | non-match: -0.0863
+validation weekly corr(quote, distance):
+date       2025-10-27/2025-11-02  2025-11-03/2025-11-09  2025-11-10/2025-11-16  2025-11-17/2025-11-23  2025-11-24/2025-11-30  2025-12-01/2025-12-07  2025-12-08/2025-12-14  2025-12-15/2025-12-21  2025-12-22/2025-12-28  2025-12-29/2026-01-04
+corr_dist                  0.063                 -0.044                  0.008                  0.049                  0.042                  0.034                  0.018                 -0.013                  0.002                 -0.035
+n                        403.000               1368.000               1348.000               1355.000               1362.000               1426.000               1377.000               1408.000               1359.000                594.000
+train weekly corr(quote, distance) in weeks with match>0.8: {'mean': nan, 'min': nan, 'max': nan}
+train weekly corr(quote, distance) in weeks with match<0.2: {'mean': 0.545, 'min': -0.019, 'max': 0.732}
+
+====================================================================================================
+4. Extreme-rate rows: are they predictable from any feature?
+====================================================================================================
+extreme rows: 652 (1.36%) | hi=317 lo=335
+hi ratio rpm/quote quantiles: {0.05: 2.5, 0.25: 3.1, 0.5: 3.74, 0.75: 4.56, 0.95: 6.39}
+lo ratio rpm/quote quantiles: {0.05: 0.186, 0.25: 0.235, 0.5: 0.299, 0.75: 0.381, 0.95: 0.503}
+hi: implied multiplier vs lane-median rpm: {0.05: 2.48, 0.25: 2.93, 0.5: 3.41, 0.75: 4.29, 0.95: 4.98}
+lo: implied multiplier vs lane-median rpm: {0.05: 0.186, 0.25: 0.221, 0.5: 0.285, 0.75: 0.354, 0.95: 0.427}
+extreme share by equipment: {'Dry Van': 0.0129, 'Flatbed': 0.0139, 'Reefer': 0.0149}
+extreme share by month: {Period('2025-01', 'M'): 0.0157, Period('2025-02', 'M'): 0.0125, Period('2025-03', 'M'): 0.0133, Period('2025-04', 'M'): 0.0133, Period('2025-05', 'M'): 0.0124, Period('2025-06', 'M'): 0.0125, Period('2025-07', 'M'): 0.013, Period('2025-08', 'M'): 0.0141, Period('2025-09', 'M'): 0.0126, Period('2025-10', 'M'): 0.0163}
+extreme share by distance band: {Interval(0, 250, closed='right'): 0.0184, Interval(250, 500, closed='right'): 0.0141, Interval(500, 1000, closed='right'): 0.0145, Interval(1000, 1500, closed='right'): 0.0132, Interval(1500, 2500, closed='right'): 0.0118, Interval(2500, 4000, closed='right'): 0.0108}
+extreme share by match regime: {False: 0.0208, True: nan}
+extreme share when weight negative: 0.024 | weight missing: 0.01 | market_index missing: 0.016
+rpm counts in bands: {Interval(0.0, 0.5, closed='right'): 103, Interval(0.5, 0.8, closed='right'): 163, Interval(0.8, 1.0, closed='right'): 63, Interval(1.0, 1.2, closed='right'): 6, Interval(1.2, 1.5, closed='right'): 2, Interval(1.5, 3.5, closed='right'): 47321, Interval(3.5, 4.0, closed='right'): 2, Interval(4.0, 5.0, closed='right'): 23, Interval(5.0, 6.0, closed='right'): 47, Interval(6.0, 8.0, closed='right'): 125, Interval(8.0, 20.0, closed='right'): 145}
+posted_rate mean all=2374.0 clean=2350.2 | std all=1486.5 clean=1362.2
+
+====================================================================================================
+5. Identifier, entity and temporal leakage checks
+====================================================================================================
+load_id encodes time order (corr of numeric id with date ordinal): 0.99998 -> must be excluded as a feature
+validation load_ids also sequential by date: True True
+no customer / carrier / shipper identifiers present -> no entity leakage beyond lanes
+lanes in validation that also appear in train: 0.8782 | validation lanes total: 4214
+distance within a lane is near-constant -> distance/lane carry no label information
+market_index: feature available at prediction time for validation rows (present in validation.csv); NOT present for December chart rows
+quote_signal: present in validation.csv; NOT present for December chart rows
+-> all target-derived encodings (lane/city means) must be fitted inside each backtest fold on its training window only.
+
+====================================================================================================
+6. Validation quote_signal: any structure at all?
+====================================================================================================
+validation daily-mean quote sd across days = 0.0160 vs expected sd if iid = 0.0157
+validation lag-1 autocorrelation of daily-mean quote = 0.0245
+train    daily-mean quote sd across days = 0.1294, lag-1 autocorr = 0.9283
+validation corr(quote, market_index): -0.0321 | corr(quote, pickup_lat): -0.0144 | corr(quote, delivery_lon): -0.005
+validation split-half correlation of lane-mean quote (lanes with both halves, n=2203): -0.0212
+train matching-regime split-half correlation of lane-mean quote: 0.7702  (reference: a real price signal)
+non-match regime (clean rows): quote ~ 2.871 + -0.400 * rpm ; corr = -0.4041; sd(quote + rpm) = 0.3000 vs sd(quote) = 0.2734
+
+====================================================================================================
+7. market_index: is validation market_index the same kind of series as in training?
+====================================================================================================
+train     : days=304 within-day sd mean=0.0249 max=0.0295 | daily-mean sd=0.1665 | day-to-day |diff| median=0.0611 max=0.2208 | lag-1 autocorr=0.9272 | missing rate=0.0078
+            corr(market_index, distance)=-0.0022 corr(market_index, |weight|)=0.0027 corr(market_index, Reefer)=-0.0007
+validation: days=61 within-day sd mean=0.0248 max=0.0283 | daily-mean sd=0.0711 | day-to-day |diff| median=0.0591 max=0.0880 | lag-1 autocorr=0.6212 | missing rate=0.0208
+            corr(market_index, distance)=-0.0014 corr(market_index, |weight|)=0.0066 corr(market_index, Reefer)=-0.0036
+train cross-correlation corr(mi(t), rpm(t+k)) for k = -14..14:
+{-14: np.float64(0.551), -7: np.float64(0.6), -3: np.float64(0.445), -1: np.float64(0.602), 0: np.float64(0.642), 1: np.float64(0.6), 3: np.float64(0.44), 7: np.float64(0.633), 14: np.float64(0.629)}
+train corr(daily mean market_index, daily MEAN clean rpm) = 0.6513; with daily MEDIAN rpm = 0.6415
+market_index missing vs present: median rpm 2.121 vs 2.145; Mann-Whitney p=0.458
+weight missing vs present:       median rpm 2.118 vs 2.146; Mann-Whitney p=0.234
+weight negative vs positive:     median rpm 2.157 vs 2.145; Mann-Whitney p=0.221

@@ -1,0 +1,23 @@
+6. Validation quote_signal: any structure at all?
+====================================================================================================
+validation daily-mean quote sd across days = 0.0160 vs expected sd if iid = 0.0157
+validation lag-1 autocorrelation of daily-mean quote = 0.0245
+train    daily-mean quote sd across days = 0.1294, lag-1 autocorr = 0.9283
+validation corr(quote, market_index): -0.0321 | corr(quote, pickup_lat): -0.0144 | corr(quote, delivery_lon): -0.005
+validation split-half correlation of lane-mean quote (lanes with both halves, n=2203): -0.0212
+train matching-regime split-half correlation of lane-mean quote: 0.7702  (reference: a real price signal)
+non-match regime (clean rows): quote ~ 2.871 + -0.400 * rpm ; corr = -0.4041; sd(quote + rpm) = 0.3000 vs sd(quote) = 0.2734
+
+====================================================================================================
+7. market_index: is validation market_index the same kind of series as in training?
+====================================================================================================
+train     : days=304 within-day sd mean=0.0249 max=0.0295 | daily-mean sd=0.1665 | day-to-day |diff| median=0.0611 max=0.2208 | lag-1 autocorr=0.9272 | missing rate=0.0078
+            corr(market_index, distance)=-0.0022 corr(market_index, |weight|)=0.0027 corr(market_index, Reefer)=-0.0007
+validation: days=61 within-day sd mean=0.0248 max=0.0283 | daily-mean sd=0.0711 | day-to-day |diff| median=0.0591 max=0.0880 | lag-1 autocorr=0.6212 | missing rate=0.0208
+            corr(market_index, distance)=-0.0014 corr(market_index, |weight|)=0.0066 corr(market_index, Reefer)=-0.0036
+train cross-correlation corr(mi(t), rpm(t+k)) for k = -14..14:
+{-14: np.float64(0.551), -7: np.float64(0.6), -3: np.float64(0.445), -1: np.float64(0.602), 0: np.float64(0.642), 1: np.float64(0.6), 3: np.float64(0.44), 7: np.float64(0.633), 14: np.float64(0.629)}
+train corr(daily mean market_index, daily MEAN clean rpm) = 0.6513; with daily MEDIAN rpm = 0.6415
+market_index missing vs present: median rpm 2.121 vs 2.145; Mann-Whitney p=0.458
+weight missing vs present:       median rpm 2.118 vs 2.146; Mann-Whitney p=0.234
+weight negative vs positive:     median rpm 2.157 vs 2.145; Mann-Whitney p=0.221

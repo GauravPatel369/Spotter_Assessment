@@ -1,0 +1,101 @@
+
+====================================================================================================
+1. Temporal coverage
+====================================================================================================
+train:       2025-01-01 -> 2025-10-31 (304 days, 158 loads/day)
+validation:  2025-11-01 -> 2025-12-31 (61 days, 197 loads/day)
+gap between last train day and first validation day: 1 day(s) -> validation is strictly the two months after training; no overlap
+validation loads per day quantiles: {0.0: 163.0, 0.25: 186.0, 0.5: 197.0, 0.75: 208.0, 1.0: 227.0}
+validation dow share: {0: 0.142, 1: 0.154, 2: 0.146, 3: 0.126, 4: 0.135, 5: 0.152, 6: 0.145}
+train dow share:      {0: 0.141, 1: 0.14, 2: 0.146, 3: 0.144, 4: 0.145, 5: 0.141, 6: 0.142}
+
+====================================================================================================
+2. Numerical features: PSI and KS (validation vs all-train / vs Sep-Oct)
+====================================================================================================
+              train_mean    val_mean   train_p50     val_p50  PSI_vs_all  PSI_vs_SepOct  KS_vs_all  KS_vs_SepOct
+feature                                                                                                         
+distance       1135.8567   1141.7731    953.3000    953.6000      0.0006         0.0025     0.0072        0.0124
+abs_weight    31417.2492  31282.9546  31496.0000  31332.0000      0.0005         0.0018     0.0096        0.0188
+market_index      1.0834      0.9269      1.0558      0.9229      5.1047         0.0710     0.4832        0.0527
+quote_signal      2.0625      2.0513      2.0558      2.0512      0.0407         0.0523     0.0459        0.0526
+pickup_lat       35.6475     35.5742     35.2948     35.2948      0.0021         0.0028     0.0125        0.0142
+pickup_lon      -90.9290    -90.7249    -88.0892    -87.5287      0.0014         0.0030     0.0117        0.0102
+delivery_lat     35.6412     35.6095     35.2948     35.2948      0.0029         0.0027     0.0103        0.0116
+delivery_lon    -90.8573    -90.9135    -87.5287    -87.5287      0.0033         0.0042     0.0101        0.0096
+
+PSI rule of thumb: <0.10 stable, 0.10-0.25 moderate shift, >0.25 major shift
+reference month-to-month PSI inside training (median, max): [('distance', np.float64(0.0035), 0.0049), ('abs_weight', np.float64(0.0036), 0.0102), ('market_index', np.float64(1.39), 8.1018)]
+
+ranges:
+  distance      train [70.000, 3439.800]  validation [70.000, 3325.700]  val rows outside train range: 0
+  weight        train [-47500.000, 47500.000]  validation [-47500.000, 47500.000]  val rows outside train range: 0
+  market_index  train [0.676, 1.468]  validation [0.724, 1.099]  val rows outside train range: 0
+  quote_signal  train [0.692, 3.610]  validation [1.235, 2.896]  val rows outside train range: 0
+  pickup_lat    train [28.358, 44.303]  validation [25.500, 44.303]  val rows outside train range: 89
+  pickup_lon    train [-121.698, -69.500]  validation [-121.698, -69.500]  val rows outside train range: 0
+
+====================================================================================================
+3. Missing values and anomalies
+====================================================================================================
+  weight        missing: train 0.62%  validation 1.38%
+  market_index  missing: train 0.78%  validation 2.08%
+  negative weight: train 0.61%  validation 1.21%
+  weight at +/-47500: train 2.51%  validation 2.51%
+  weight at exactly 47500 share of max: train max 47500.0, validation max 47500.0
+
+====================================================================================================
+4. Categorical features
+====================================================================================================
+equipment share train:      {'Dry Van': 0.5667, 'Reefer': 0.2509, 'Flatbed': 0.1824}
+equipment share validation: {'Dry Van': 0.565, 'Reefer': 0.2542, 'Flatbed': 0.1808} | PSI=0.0001
+
+cities in validation not in train: ['Allentown', 'Charlotte', 'Chicago', 'Jackson', 'Knoxville', 'Laredo', 'Norfolk', 'San Diego']
+validation rows touching an unseen city: 1,447 (12.06%) | both ends unseen: 0
+unseen city coordinates and load counts:
+     city      lat        lon  loads_as_pickup_or_delivery
+Allentown 40.01684  -73.80889                          171
+Charlotte 34.65272  -81.47202                          176
+  Chicago 40.51200  -86.86737                          179
+  Jackson 32.07771  -90.92587                          193
+Knoxville 36.25725  -86.02539                          170
+   Laredo 25.50000  -97.22681                          195
+  Norfolk 37.12278  -75.87106                          172
+San Diego 32.00929 -116.89598                          191
+
+unseen city timing (first/last date, loads per month):
+{Period('2025-11', 'M'): 721, Period('2025-12', 'M'): 726} | first: 2025-11-01
+
+validation lanes: 4214 | share of validation rows whose lane exists in train: 0.8782
+share of validation rows whose lane has >=10 train loads: 0.6539
+pickup city PSI (train vs val, shared cities only): 0.0056 | delivery: 0.0056
+largest pickup share changes (val - train): {'Oklahoma City': -0.0056, 'El Paso': -0.0037, 'Los Angeles': -0.0033} {'Reno': 0.0009, 'Tampa': 0.001, 'Savannah': 0.002}
+
+====================================================================================================
+5. market_index regime
+====================================================================================================
+monthly mean market_index train: {Period('2025-01', 'M'): 0.927, Period('2025-02', 'M'): 0.996, Period('2025-03', 'M'): 1.073, Period('2025-04', 'M'): 1.208, Period('2025-05', 'M'): 1.301, Period('2025-06', 'M'): 1.28, Period('2025-07', 'M'): 1.201, Period('2025-08', 'M'): 0.981, Period('2025-09', 'M'): 0.893, Period('2025-10', 'M'): 0.958}
+monthly mean market_index validation: {Period('2025-11', 'M'): 0.919, Period('2025-12', 'M'): 0.935}
+validation market_index lies within the training range: True
+training months with similar market level (|mean - 0.93| < 0.07): ['2025-01', '2025-02', '2025-08', '2025-09', '2025-10']
+
+====================================================================================================
+6. Feature combinations: equipment x distance band shares
+====================================================================================================
+train:
+ dist_band  (0, 250]  (250, 500]  (500, 1000]  (1000, 1500]  (1500, 2500]  (2500, 4000]
+equipment                                                                             
+Dry Van       0.032       0.089        0.176         0.108         0.130         0.032
+Flatbed       0.010       0.030        0.058         0.032         0.042         0.010
+Reefer        0.014       0.039        0.080         0.048         0.057         0.014
+validation:
+ dist_band  (0, 250]  (250, 500]  (500, 1000]  (1000, 1500]  (1500, 2500]  (2500, 4000]
+equipment                                                                             
+Dry Van       0.033       0.089        0.175         0.104         0.131         0.032
+Flatbed       0.009       0.032        0.055         0.034         0.041         0.010
+Reefer        0.015       0.036        0.082         0.047         0.059         0.016
+max abs cell difference: 0.0040000000000000036
+
+====================================================================================================
+7. Figures
+====================================================================================================
+written 12_drift_numeric.png, 13_unseen_cities.png
