@@ -1,0 +1,73 @@
+fold: train<= 2025-08 -> 2025-09..10 | best_iter=2062 | clean-row MAE baseline = 45.11
+XGBoost gain importance (share):
+equipment         0.3675
+haversine         0.2869
+log_distance      0.1501
+distance          0.1182
+abs_weight        0.0284
+lane_effect       0.0103
+delivery_lat      0.0077
+pickup_lat        0.0071
+pickup            0.0039
+delivery          0.0036
+pickup_lon        0.0031
+circuity          0.0027
+delivery_lon      0.0025
+is_weekend        0.0013
+bearing_sin       0.0012
+weight_capped     0.0011
+dow               0.0011
+bearing_cos       0.0011
+lane_count        0.0009
+weight_missing    0.0006
+is_holiday        0.0005
+mi_missing        0.0004
+permutation importance (increase in clean-row MAE, $):
+                MAE_increase_$
+feature                       
+equipment               107.07
+haversine                83.83
+distance                 47.63
+abs_weight               37.67
+pickup                   16.06
+delivery                 15.08
+log_distance              4.13
+lane_effect               4.03
+pickup_lat                0.35
+circuity                  0.30
+delivery_lat              0.25
+pickup_lon                0.11
+delivery_lon              0.08
+dow                       0.07
+bearing_cos               0.06
+bearing_sin               0.01
+weight_missing            0.01
+mi_missing                0.00
+is_weekend                0.00
+is_holiday               -0.00
+lane_count               -0.00
+weight_capped            -0.01
+replacing the LevelModel forecast by the training-window mean level: clean-row MAE 45.76 (vs 45.11)
+SHAP mean |value| (log $/mile units):
+equipment         0.0507
+haversine         0.0415
+distance          0.0250
+abs_weight        0.0213
+pickup            0.0112
+delivery          0.0108
+log_distance      0.0076
+lane_effect       0.0040
+delivery_lat      0.0013
+pickup_lat        0.0013
+circuity          0.0012
+dow               0.0010
+pickup_lon        0.0007
+bearing_sin       0.0006
+delivery_lon      0.0004
+bearing_cos       0.0004
+lane_count        0.0003
+weight_capped     0.0001
+weight_missing    0.0000
+is_weekend        0.0000
+is_holiday        0.0000
+mi_missing        0.0000

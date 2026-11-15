@@ -1,0 +1,30 @@
+1. cleaning
+   negative weights after clean: 0 | market_index NaN after fill: train 0 val 0
+   abs_weight NaN (to be imputed in pipeline): train 300 val 165
+2. fold-wise pipeline: fit on train window only, transform both
+   train<= 2025-04 -> 2025-05..06: train 19,110 valid 9,696 | numeric NaNs in valid: 0 | valid rows on lane unseen in window: 0.019 | max train date 2025-04-30 < min valid date 2025-05-01: True
+   train<= 2025-06 -> 2025-07..08: train 28,806 valid 9,671 | numeric NaNs in valid: 0 | valid rows on lane unseen in window: 0.005 | max train date 2025-06-30 < min valid date 2025-07-01: True
+   train<= 2025-07 -> 2025-08..09: train 33,718 valid 9,429 | numeric NaNs in valid: 0 | valid rows on lane unseen in window: 0.003 | max train date 2025-07-31 < min valid date 2025-08-01: True
+   train<= 2025-08 -> 2025-09..10: train 38,477 valid 9,523 | numeric NaNs in valid: 0 | valid rows on lane unseen in window: 0.002 | max train date 2025-08-31 < min valid date 2025-09-01: True
+3. full fit -> validation.csv and December chart rows
+   validation numeric NaNs: 0 | unseen pickup (NaN category): 725 | unseen delivery: 722 | rows on unseen lane: 1465
+   December rows: 31 | numeric NaNs: 0 | market_index range: 0.831 1.045 | lane_count: 32.0 | holidays flagged: 1
+4. lane effect: is it a real signal?  split-half reliability on training data (clean band)
+   lanes with >= 1 loads in both halves: n=3799  corr(effect_a, effect_b) = 0.644
+   lanes with >= 5 loads in both halves: n=1750  corr(effect_a, effect_b) = 0.767
+   lanes with >= 8 loads in both halves: n= 737  corr(effect_a, effect_b) = 0.822
+   sd of raw lane effects (half a, >=5 loads): 0.0355 (log scale; 0.05 = 5% price premium spread)
+   pickup city effect split-half corr: 0.959 | sd: 0.0175
+   delivery city effect split-half corr: 0.966 | sd: 0.0167
+5. does the lane effect add beyond pickup + delivery city effects? (variance of lane effect after removing city effects)
+Traceback (most recent call last):
+  File "c:\Spotter_as\src\check_features.py", line 72, in <module>
+    print(f"   lanes >=15 loads: sd(lane effect)={big['effect'].std():.4f}  sd(after city effects)={big['resid'].std():.4f}  expected sampling sd\u2248{(0.09 / np.sqrt(big['count'])).mean():.4f}")
+  File "C:\Users\Gaurav\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2248' in position 96: character maps to <undefined>
+   delivery city effect split-half corr: 0.966 | sd: 0.0167
+5. does the lane effect add beyond pickup + delivery city effects? (variance of lane effect after removing city effects)
+   lanes >=15 loads: sd(lane effect)=0.0327  sd(after city effects)=0.0222  expected sampling sd~0.0203
+OK

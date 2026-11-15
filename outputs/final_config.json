@@ -1,0 +1,1 @@
+{"model": "xgb_gpu+ridge", "params": {"max_depth": 4, "min_child_weight": 50, "n_estimators": 2500}, "feature_set": "level", "level": "fe3d5", "target": "log_rpm", "train_filter": "clean", "seeds": [0, 1, 2]}
