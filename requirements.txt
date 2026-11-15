@@ -1,0 +1,12 @@
+# Scorer requirements (from the assessment) ...
+matplotlib>=3.8,<4
+numpy>=1.26,<3
+pandas>=2.0,<3
+# ... plus the modelling stack used by src/
+scikit-learn>=1.6
+scipy>=1.13
+xgboost>=3.0
+lightgbm>=4.5
+catboost>=1.2
+shap>=0.46
+seaborn>=0.13
