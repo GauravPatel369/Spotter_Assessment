@@ -128,14 +128,14 @@ def make_model(name: str, features: list[str], params: dict | None = None):
         obj = {"xgb_gpu": "reg:squarederror", "xgb_gpu_l1": "reg:absoluteerror", "xgb_gpu_huber": "reg:pseudohubererror"}[name]
         kw = dict(objective=obj, learning_rate=p.get("learning_rate", 0.03), n_estimators=p.get("n_estimators", 3000), max_depth=p.get("max_depth", 6),
                   min_child_weight=p.get("min_child_weight", 20), subsample=p.get("subsample", 0.8), colsample_bytree=p.get("colsample_bytree", 0.8),
-                  reg_lambda=p.get("reg_lambda", 1.0), tree_method="hist", device="cuda", enable_categorical=True, max_cat_to_onehot=1,
+                  reg_lambda=p.get("reg_lambda", 1.0), tree_method="hist", device=os.environ.get("XGB_DEVICE", "cuda"), enable_categorical=True, max_cat_to_onehot=1,
                   early_stopping_rounds=100, random_state=p.get("seed", 0))
         return xgb.XGBRegressor(**kw), {"early_stopping": "xgb"}
     if name.startswith("cat"):
         from catboost import CatBoostRegressor
         loss = {"cat_gpu": "RMSE", "cat_gpu_mae": "MAE", "cat_gpu_huber": "Huber:delta=0.1"}[name]
         kw = dict(loss_function=loss, learning_rate=p.get("learning_rate", 0.05), iterations=p.get("iterations", 4000), depth=p.get("depth", 6),
-                  l2_leaf_reg=p.get("l2_leaf_reg", 3.0), task_type="GPU", devices="0", random_seed=p.get("seed", 0), verbose=0,
+                  l2_leaf_reg=p.get("l2_leaf_reg", 3.0), task_type=os.environ.get("CATBOOST_TASK", "GPU"), devices="0", random_seed=p.get("seed", 0), verbose=0,
                   od_type="Iter", od_wait=150, cat_features=[c for c in features if c in CATEGORICAL_FEATURES])
         return CatBoostRegressor(**kw), {"early_stopping": "cat"}
     raise ValueError(name)
